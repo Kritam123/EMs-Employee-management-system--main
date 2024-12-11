@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  firstName       String
+  lastName        String
+  email           String         @unique
+  password        String
+  photo_url       Json?
+  PhoneNo         String?
+  address         String?
+  createdOrg      Organization[] @relation("CreatedBy")
+  organizationIds String[]       @db.ObjectId
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  orgMembers      OrgMember[]
+  refreshToken String?     @unique
+}
+
+model Organization {
+  id                  String                @id @default(auto()) @map("_id") @db.ObjectId
+  orgName             String
+  description         String?
+  org_logo           String?
+  orgMembers          OrgMember[]
+  orgMemberAttendance OrgMemberAttendance[]
+  createdId           String                @db.ObjectId
+  Creater             Employee?             @relation("CreatedBy", fields: [createdId], references: [id], onDelete: Cascade)
+  memberInviteCode    String                @unique
+   lastAccessed DateTime @default(now())
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+}
+
+model OrgMember {
+  id                  String                @id @default(auto()) @map("_id") @db.ObjectId
+  employeeId          String                @db.ObjectId
+  employee            Employee              @relation(references: [id], fields: [employeeId])
+  organizationId      String                @db.ObjectId
+  organization        Organization          @relation(references: [id], fields: [organizationId], onDelete: Cascade)
+  orgMemberSalary     OrgMemberSalary[]
+  orgMemberAttendance OrgMemberAttendance[]
+  createdAt           DateTime              @default(now())
+  role                Role                  @default(EMPLOYEE)
+  updatedAt           DateTime              @updatedAt
+}
+
+model OrgMemberSalary {
+  id                 String    @id @default(auto()) @map("_id") @db.ObjectId
+  grossSalary        Float?
+  deductionsOfSalary Float?
+  reasonOfDeduction  String?
+  orgMemberId        String    @db.ObjectId
+  orgMember          OrgMember @relation(references: [id], fields: [orgMemberId])
+  createdAt          DateTime  @default(now())
+  updateAt           DateTime  @updatedAt
+}
+
+model OrgMemberAttendance {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  isPresent      Boolean      @default(false)
+  orgMemberId    String       @db.ObjectId
+  orgMember      OrgMember    @relation(references: [id], fields: [orgMemberId])
+  organizationId String       @db.ObjectId
+  organization   Organization @relation(references: [id], fields: [organizationId])
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
